@@ -31,9 +31,7 @@ impl State {
         println!("Writing state...");
         match write_result {
             Ok(()) => Ok(true),
-            Err(e) => {
-                Err(Box::new(e) as Box<dyn Error>)
-            },
+            Err(e) => Err(Box::new(e) as Box<dyn Error>),
         }
     }
 
@@ -62,7 +60,7 @@ impl State {
         } else if self.vitals.is_sick() {
             self.vitals.modify_hp(-1);
         }
-        
+
         // poo incoming!
         if self.vitals.comfort == 0 {
             self.mess = true;
@@ -89,7 +87,6 @@ mod vitals {
     }
 
     impl Stat for u8 {
-
         /// Used to modify u8 values and prevent overflow
         fn modify(&mut self, level: i8) {
             if level.is_negative() {
@@ -123,7 +120,6 @@ mod vitals {
     }
 
     impl Vitals {
-
         pub fn modify_hunger(&mut self, level: i8) {
             if !self.is_cranky() {
                 self.hunger.modify(level);
@@ -149,11 +145,11 @@ mod vitals {
         pub fn is_alive(self) -> bool {
             self.hp > 0
         }
-        
+
         pub fn is_cranky(self) -> bool {
             self.happiness <= 50
         }
-        
+
         pub fn needs_food(self) -> bool {
             self.hunger >= 100
         }

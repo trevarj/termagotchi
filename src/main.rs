@@ -1,20 +1,23 @@
+use crossterm::style::{
+    Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
+    Styler,
+};
+use crossterm::{cursor, event, execute, queue, terminal, Result};
 use std::io::{stdout, Write};
 use std::time::Duration;
-use termagotchi::state::State;
 use termagotchi::actions::{perform_action, Action};
-use crossterm::{cursor, event, execute, queue, terminal, Result};
-use crossterm::style::{Print, SetForegroundColor, SetBackgroundColor, SetAttribute, ResetColor, Color, Styler, Attribute};
+use termagotchi::state::State;
 
 static PATH: &str = "./termagotchi.json";
 fn main() -> Result<()> {
-
     // load game state
-    let  state = &mut State::load(PATH).unwrap();
+    let state = &mut State::load(PATH).unwrap();
 
     // set up terminal window
     let (cols, rows) = terminal::size()?;
     terminal::enable_raw_mode()?;
-    execute!(stdout(), 
+    execute!(
+        stdout(),
         terminal::EnterAlternateScreen,
         cursor::Hide,
         terminal::SetSize(30, 15),
@@ -24,14 +27,11 @@ fn main() -> Result<()> {
     )?;
 
     let duck = "🦆";
-    execute!(stdout(), 
-        cursor::MoveTo(15, 7),
-        Print(duck.dim()),
-    )?;
+    execute!(stdout(), cursor::MoveTo(15, 7), Print(duck.dim()),)?;
 
     // draw the on-screen controls/actions
     draw_actionbar()?;
-    
+
     loop {
         // update the status of the pet
         draw_statusbar(state)?;
@@ -39,44 +39,45 @@ fn main() -> Result<()> {
         // listen for an input event
         if event::poll(Duration::from_secs(1))? {
             match event::read()? {
-                event::Event::Key(key_press) => {
-
-                    match key_press.code {
-                        event::KeyCode::Char('q') => break,
-                        event::KeyCode::Char('1') => perform_action(Action::Meal, state),
-                        event::KeyCode::Char('2') => perform_action(Action::Snack, state),
-                        event::KeyCode::Char('3') => perform_action(Action::Play, state),
-                        event::KeyCode::Char('4') => perform_action(Action::Scold, state),
-                        event::KeyCode::Char('t') => perform_action(Action::Toilet, state),
-                        event::KeyCode::Char('c') => perform_action(Action::Clean, state),
-                        _ => {},
-                    }
-                }
-                _ => {},
+                event::Event::Key(key_press) => match key_press.code {
+                    event::KeyCode::Char('q') => break,
+                    event::KeyCode::Char('1') => perform_action(Action::Meal, state),
+                    event::KeyCode::Char('2') => perform_action(Action::Snack, state),
+                    event::KeyCode::Char('3') => perform_action(Action::Play, state),
+                    event::KeyCode::Char('4') => perform_action(Action::Scold, state),
+                    event::KeyCode::Char('t') => perform_action(Action::Toilet, state),
+                    event::KeyCode::Char('c') => perform_action(Action::Clean, state),
+                    _ => {}
+                },
+                _ => {}
             }
         } else {
-            
         }
 
         // progress the game state...
         state.tick();
-
     }
 
     // save the game state to disk
     let _ = state.save(PATH).unwrap();
-    
+
     terminal::disable_raw_mode()?;
-    Ok(execute!(stdout(), 
+    Ok(execute!(
+        stdout(),
         terminal::LeaveAlternateScreen,
         terminal::SetSize(cols, rows),
         ResetColor,
     )?)
 }
 
-fn draw_icon(icon: &str, position: (u16, u16), dimmed: bool) -> Result<()>{
-    let attribute = if dimmed { Attribute::Dim } else {Attribute::Reset};
-    queue!(stdout(),
+fn draw_icon(icon: &str, position: (u16, u16), dimmed: bool) -> Result<()> {
+    let attribute = if dimmed {
+        Attribute::Dim
+    } else {
+        Attribute::Reset
+    };
+    queue!(
+        stdout(),
         cursor::MoveTo(position.0, position.1),
         SetAttribute(attribute),
         SetBackgroundColor(Color::Grey),
@@ -109,7 +110,7 @@ fn draw_statusbar(state: &State) -> Result<()> {
     let smiley = "🙂";
     let weary = "😩";
     let sick = "🤕";
-    
+
     if state.vitals.needs_toilet() {
         draw_icon(toilet, (0, 4), false)?;
         draw_icon("t", (0, 5), false)?;
