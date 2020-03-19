@@ -1,9 +1,13 @@
 [package]
 name = "termagotchi"
+description = "A terminal tamagotchi game"
 version = "0.1.0"
 authors = ["Trevor Arjeski <tmarjeski@gmail.com>"]
 edition = "2018"
-
+repository = "https://github.com/trevarj/termagotchi"
+license-file = "LICENSE.txt"
+keywords = ["game", "terminal", "fun", "beginner"]
+catagories = ["games"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
