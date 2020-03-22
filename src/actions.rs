@@ -21,7 +21,7 @@ pub fn perform_action(action: Action, state: &mut State) {
 fn feed(food_type: Action, state: &mut State) {
     if let Action::Meal = food_type {
         state.vitals.modify_hunger(-40);
-        state.vitals.modify_comfort(-20)
+        state.vitals.modify_comfort(-20);
     }
 
     if let Action::Snack = food_type {

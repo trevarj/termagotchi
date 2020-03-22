@@ -64,8 +64,10 @@ impl State {
         // poo incoming!
         if self.vitals.comfort == 0 {
             self.mess = true;
-            self.vitals.modify_comfort(100);
+            self.vitals.modify_comfort(i8::max_value());
         }
+
+        eprintln!("{:?}", self.vitals);
     }
 }
 

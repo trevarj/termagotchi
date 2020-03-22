@@ -1,6 +1,5 @@
 use crossterm::style::{
-    Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
-    Styler,
+    Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor
 };
 use crossterm::{cursor, event, execute, queue, terminal, Result};
 use std::io::{stdout, Write};
@@ -26,15 +25,15 @@ fn main() -> Result<()> {
         terminal::Clear(terminal::ClearType::All),
     )?;
 
-    let duck = "🦆";
-    execute!(stdout(), cursor::MoveTo(15, 7), Print(duck.dim()),)?;
-
     // draw the on-screen controls/actions
     draw_actionbar()?;
 
     loop {
         // update the status of the pet
         draw_statusbar(state)?;
+
+        // draw pet 
+        draw_pet(state)?;
 
         // listen for an input event
         if event::poll(Duration::from_secs(1))? {
@@ -70,7 +69,7 @@ fn main() -> Result<()> {
     )?)
 }
 
-fn draw_icon(icon: &str, position: (u16, u16), dimmed: bool) -> Result<()> {
+fn draw_character(icon: &str, position: (u16, u16), dimmed: bool) -> Result<()> {
     let attribute = if dimmed {
         Attribute::Dim
     } else {
@@ -92,14 +91,14 @@ fn draw_actionbar() -> Result<()> {
     let meal = "🍔";
     let ball = "⚽";
     let scold_finger = "👉";
-    draw_icon(meal, (6, 12), false)?;
-    draw_icon("1", (6, 13), false)?;
-    draw_icon(snack, (11, 12), false)?;
-    draw_icon("2", (11, 13), false)?;
-    draw_icon(ball, (16, 12), false)?;
-    draw_icon("3", (16, 13), false)?;
-    draw_icon(scold_finger, (21, 12), false)?;
-    draw_icon("4", (21, 13), false)?;
+    draw_character(meal, (6, 12), false)?;
+    draw_character("1", (6, 13), false)?;
+    draw_character(snack, (11, 12), false)?;
+    draw_character("2", (11, 13), false)?;
+    draw_character(ball, (16, 12), false)?;
+    draw_character("3", (16, 13), false)?;
+    draw_character(scold_finger, (21, 12), false)?;
+    draw_character("4", (21, 13), false)?;
     stdout().flush()?;
     Ok(())
 }
@@ -112,27 +111,58 @@ fn draw_statusbar(state: &State) -> Result<()> {
     let sick = "🤕";
 
     if state.vitals.needs_toilet() {
-        draw_icon(toilet, (0, 4), false)?;
-        draw_icon("t", (0, 5), false)?;
+        draw_character(toilet, (0, 4), false)?;
+        draw_character("t", (0, 5), false)?;
     } else {
-        draw_icon(" ", (0, 4), false)?;
-        draw_icon(" ", (0, 5), false)?;
+        draw_character(" ", (0, 4), false)?;
+        draw_character(" ", (0, 5), false)?;
     }
     if state.mess {
-        draw_icon(poop, (12, 8), false)?;
-        draw_icon("c", (12, 9), false)?;
+        draw_character(poop, (12, 8), false)?;
+        draw_character("c", (12, 9), false)?;
     } else {
-        draw_icon(" ", (12, 8), false)?;
-        draw_icon(" ", (12, 9), false)?;
+        draw_character(" ", (12, 8), false)?;
+        draw_character(" ", (12, 9), false)?;
     }
 
     if state.vitals.is_cranky() {
-        draw_icon(weary, (0, 2), false)?;
+        draw_character(weary, (0, 2), false)?;
     } else if state.vitals.is_sick() {
-        draw_icon(sick, (0, 2), false)?;
+        draw_character(sick, (0, 2), false)?;
     } else {
-        draw_icon(smiley, (0, 2), false)?;
+        draw_character(smiley, (0, 2), false)?;
     }
+    stdout().flush()?;
+    Ok(())
+}
+
+fn draw_pet(state: &State) -> Result<()> {
+
+    let neutral = "(\\_/)\n( •,•)\n(\")_(\")";
+    let sad = "(\\(\\)\n( ..)\n((‘)(’)";
+    let sick = "(\\(\\)\n(– -)\n((‘)(’)";
+    
+    let mut pet_model = neutral;
+    if state.vitals.is_sick() {
+        pet_model = sick;
+    } else if state.vitals.is_cranky() {
+        pet_model = sad;
+    }
+    let starting_point: (u16, u16) = (10, 7);
+    
+    let iter = pet_model.chars().into_iter();
+
+    let mut coord = starting_point;
+    for character in iter {
+        if character == '\n' {
+            coord.1 += 1;
+            coord.0 = starting_point.0;
+        } else {
+            coord.0 += 1;
+        }
+        draw_character(&character.to_string(), coord, false)?;
+    }
+
     stdout().flush()?;
     Ok(())
 }
