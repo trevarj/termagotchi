@@ -67,7 +67,7 @@ impl State {
             self.vitals.modify_comfort(i8::max_value());
         }
 
-        eprintln!("{:?}", self.vitals);
+        // eprintln!("{:?}", self.vitals);
     }
 }
 

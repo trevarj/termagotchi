@@ -105,32 +105,35 @@ fn draw_actionbar() -> Result<()> {
 
 fn draw_statusbar(state: &State) -> Result<()> {
     let toilet = "🚽";
+    let toilet_coord: (u16, u16) = (0, 4);
     let poop = "💩";
+    let poop_coord: (u16, u16) = (9, 9);
     let smiley = "🙂";
     let weary = "😩";
     let sick = "🤕";
+    let mood_coord: (u16, u16) = (0, 2);
 
     if state.vitals.needs_toilet() {
-        draw_character(toilet, (0, 4), false)?;
+        draw_character(toilet, toilet_coord, false)?;
         draw_character("t", (0, 5), false)?;
     } else {
-        draw_character(" ", (0, 4), false)?;
+        draw_character(" ", toilet_coord, false)?;
         draw_character(" ", (0, 5), false)?;
     }
     if state.mess {
-        draw_character(poop, (12, 8), false)?;
-        draw_character("c", (12, 9), false)?;
+        draw_character(poop, poop_coord, false)?;
+        draw_character("c", (9, 10), false)?;
     } else {
-        draw_character(" ", (12, 8), false)?;
-        draw_character(" ", (12, 9), false)?;
+        draw_character(" ", poop_coord, false)?;
+        draw_character(" ", (9, 10), false)?;
     }
 
     if state.vitals.is_cranky() {
-        draw_character(weary, (0, 2), false)?;
+        draw_character(weary, mood_coord, false)?;
     } else if state.vitals.is_sick() {
-        draw_character(sick, (0, 2), false)?;
+        draw_character(sick, mood_coord, false)?;
     } else {
-        draw_character(smiley, (0, 2), false)?;
+        draw_character(smiley, mood_coord, false)?;
     }
     stdout().flush()?;
     Ok(())
