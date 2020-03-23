@@ -6,7 +6,7 @@ For you zoomer millenials out there, a [tamagotchi](https://en.wikipedia.org/wik
 I made this as my first Rust project to see how the language works and stuff.
 
 ## Running
-Right now this used emojis so you'll need a terminal emulator that supports unicode.
+Right now this uses emojis so you'll need a terminal emulator that supports unicode.
 
 Basically just `cargo run` and it will resize your terminal.
 
