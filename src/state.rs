@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
+use std::io::{BufReader, BufWriter, Result};
 use std::path::Path;
 use vitals::Vitals;
 
@@ -23,19 +22,16 @@ impl Default for State {
 }
 
 impl State {
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<bool, Box<dyn Error>> {
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         println!("Opening state file...");
-        let file = File::create(path).unwrap();
+        let file = File::create(path)?;
         let writer = BufWriter::new(file);
-        let write_result = serde_json::to_writer_pretty(writer, self);
         println!("Writing state...");
-        match write_result {
-            Ok(()) => Ok(true),
-            Err(e) => Err(Box::new(e) as Box<dyn Error>),
-        }
+        serde_json::to_writer_pretty(writer, self)?;
+        Ok(())
     }
 
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<State, Box<dyn Error>> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<State> {
         if let Ok(file) = File::open(path) {
             println!("Reading state from file...");
             let reader = BufReader::new(file);
@@ -92,19 +88,9 @@ mod vitals {
         /// Used to modify u8 values and prevent overflow
         fn modify(&mut self, level: i8) {
             if level.is_negative() {
-                let (new_level, overflow) = self.overflowing_sub(level.wrapping_abs() as u8);
-                if overflow {
-                    *self = u8::min_value();
-                } else {
-                    *self = new_level;
-                }
+                *self = self.saturating_sub(level.wrapping_abs() as u8);
             } else {
-                let (new_level, overflow) = self.overflowing_add(level.wrapping_abs() as u8);
-                if overflow {
-                    *self = u8::max_value();
-                } else {
-                    *self = new_level;
-                }
+                *self = self.saturating_add(level.wrapping_abs() as u8);
             }
         }
     }

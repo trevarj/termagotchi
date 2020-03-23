@@ -1,5 +1,5 @@
 use crossterm::style::{
-    Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor
+    Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
 };
 use crossterm::{cursor, event, execute, queue, terminal, Result};
 use std::io::{stdout, Write};
@@ -32,7 +32,7 @@ fn main() -> Result<()> {
         // update the status of the pet
         draw_statusbar(state)?;
 
-        // draw pet 
+        // draw pet
         draw_pet(state)?;
 
         // listen for an input event
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
     }
 
     // save the game state to disk
-    let _ = state.save(PATH).unwrap();
+    let _ = state.save(PATH);
 
     terminal::disable_raw_mode()?;
     Ok(execute!(
@@ -140,11 +140,10 @@ fn draw_statusbar(state: &State) -> Result<()> {
 }
 
 fn draw_pet(state: &State) -> Result<()> {
-
     let neutral = "(\\_/)\n( •,•)\n(\")_(\")";
     let sad = "(\\(\\)\n( ..)\n((‘)(’)";
     let sick = "(\\(\\)\n(– -)\n((‘)(’)";
-    
+
     let mut pet_model = neutral;
     if state.vitals.is_sick() {
         pet_model = sick;
@@ -152,7 +151,7 @@ fn draw_pet(state: &State) -> Result<()> {
         pet_model = sad;
     }
     let starting_point: (u16, u16) = (10, 7);
-    
+
     let iter = pet_model.chars().into_iter();
 
     let mut coord = starting_point;
