@@ -51,14 +51,14 @@ impl State {
         self.vitals.modify_happiness(-1);
 
         // health regen or degen
-        if self.vitals.hp < 100 && !self.vitals.is_sick() {
+        if self.vitals.hp.get() < 100 && !self.vitals.is_sick() {
             self.vitals.modify_hp(1);
         } else if self.vitals.is_sick() {
             self.vitals.modify_hp(-1);
         }
 
         // poo incoming!
-        if self.vitals.comfort == 0 {
+        if self.vitals.comfort.is_zero() {
             self.mess = true;
             self.vitals.modify_comfort(i8::max_value());
         }
@@ -74,24 +74,33 @@ mod vitals {
     #[derive(Serialize, Deserialize, Copy, Clone, Debug)]
     pub struct Vitals {
         pub alive: bool,
-        pub hp: u8,
-        pub hunger: u8,
-        pub happiness: u8,
-        pub comfort: u8,
+        pub hp: Stat,
+        pub hunger: Stat,
+        pub happiness: Stat,
+        pub comfort: Stat,
     }
 
-    trait Stat {
-        fn modify(&mut self, level: i8);
-    }
+    #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+    pub struct Stat(u8);
 
-    impl Stat for u8 {
+    impl Stat {
         /// Used to modify u8 values and prevent overflow
-        fn modify(&mut self, level: i8) {
+        pub fn modify(&mut self, level: i8) {
             if level.is_negative() {
-                *self = self.saturating_sub(level.wrapping_abs() as u8);
+                self.0 = self.0.saturating_sub(level.wrapping_abs() as u8);
             } else {
-                *self = self.saturating_add(level.wrapping_abs() as u8);
+                self.0 = self.0.saturating_add(level.wrapping_abs() as u8);
             }
+        }
+
+        /// Returns a value of a stat.
+        pub fn get(&self) -> u8 {
+            self.0
+        }
+
+        /// Returns `true` if the stat is zero.
+        pub fn is_zero(&self) -> bool {
+            self.0 == 0
         }
     }
 
@@ -99,10 +108,10 @@ mod vitals {
         fn default() -> Vitals {
             Vitals {
                 alive: true,
-                hp: 100,
-                hunger: 50,
-                happiness: 100,
-                comfort: 100,
+                hp: Stat(100),
+                hunger: Stat(50),
+                happiness: Stat(100),
+                comfort: Stat(100),
             }
         }
     }
@@ -127,23 +136,23 @@ mod vitals {
         }
 
         pub fn is_sick(self) -> bool {
-            self.hunger >= 150 || self.happiness == 0
+            self.hunger.get() >= 150 || self.happiness.is_zero()
         }
 
         pub fn is_alive(self) -> bool {
-            self.hp > 0
+            !self.hp.is_zero()
         }
 
         pub fn is_cranky(self) -> bool {
-            self.happiness <= 50
+            self.happiness.get() <= 50
         }
 
         pub fn needs_food(self) -> bool {
-            self.hunger >= 100
+            self.hunger.get() >= 100
         }
 
         pub fn needs_toilet(self) -> bool {
-            self.comfort <= 50
+            self.comfort.get() <= 50
         }
     }
 }
