@@ -1,4 +1,6 @@
 use super::state::State;
+
+#[derive(Debug)]
 pub enum Action {
     Meal,
     Snack,
@@ -8,9 +10,9 @@ pub enum Action {
     Clean,
 }
 
-pub fn perform_action(action: Action, state: &mut State) {
-    match action {
-        a @ Action::Meal | a @ Action::Snack => feed(a, state),
+pub fn perform_action(action: &Action, state: &mut State) {
+    match &action {
+        Action::Meal | Action::Snack => feed(&action, state),
         Action::Play => play(state),
         Action::Clean => clean(state),
         Action::Toilet => toilet(state),
@@ -18,7 +20,7 @@ pub fn perform_action(action: Action, state: &mut State) {
     }
 }
 
-fn feed(food_type: Action, state: &mut State) {
+fn feed(food_type: &Action, state: &mut State) {
     if let Action::Meal = food_type {
         state.vitals.modify_hunger(-40);
         state.vitals.modify_comfort(-20);

@@ -40,12 +40,12 @@ fn main() -> Result<()> {
             match event::read()? {
                 event::Event::Key(key_press) => match key_press.code {
                     event::KeyCode::Char('q') => break,
-                    event::KeyCode::Char('1') => perform_action(Action::Meal, state),
-                    event::KeyCode::Char('2') => perform_action(Action::Snack, state),
-                    event::KeyCode::Char('3') => perform_action(Action::Play, state),
-                    event::KeyCode::Char('4') => perform_action(Action::Scold, state),
-                    event::KeyCode::Char('t') => perform_action(Action::Toilet, state),
-                    event::KeyCode::Char('c') => perform_action(Action::Clean, state),
+                    event::KeyCode::Char('1') => perform_action(&Action::Meal, state),
+                    event::KeyCode::Char('2') => perform_action(&Action::Snack, state),
+                    event::KeyCode::Char('3') => perform_action(&Action::Play, state),
+                    event::KeyCode::Char('4') => perform_action(&Action::Scold, state),
+                    event::KeyCode::Char('t') => perform_action(&Action::Toilet, state),
+                    event::KeyCode::Char('c') => perform_action(&Action::Clean, state),
                     _ => {}
                 },
                 _ => {}
