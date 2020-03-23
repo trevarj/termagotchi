@@ -7,7 +7,7 @@ edition = "2018"
 repository = "https://github.com/trevarj/termagotchi"
 license-file = "LICENSE"
 keywords = ["game", "terminal", "fun", "beginner"]
-catagories = ["games"]
+categories = ["games"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
