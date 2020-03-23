@@ -7,7 +7,8 @@ use std::time::Duration;
 use termagotchi::actions::{perform_action, Action};
 use termagotchi::state::State;
 
-static PATH: &str = "./termagotchi.json";
+const PATH: &str = "./termagotchi.json";
+
 fn main() -> Result<()> {
     // load game state
     let state = &mut State::load(PATH).unwrap();
