@@ -81,7 +81,7 @@ mod vitals {
     }
 
     #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
-    pub struct Stat(u8);
+    pub struct Stat(pub u8);
 
     impl Stat {
         /// Used to modify u8 values and prevent overflow
@@ -162,4 +162,10 @@ mod tests {
     use super::*;
 
     // Hmm...
+    #[test]
+    fn test_stat_modify() {
+        let mut stat = vitals::Stat(3);
+        stat.modify(-4);
+        assert_eq!(stat.get(), 0);
+    }
 }

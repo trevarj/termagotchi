@@ -5,6 +5,7 @@ use crossterm::{cursor, event, execute, queue, terminal, Result};
 use std::io::{stdout, Write};
 use std::time::Duration;
 use termagotchi::actions::{perform_action, Action};
+use termagotchi::glyphs;
 use termagotchi::state::State;
 
 const PATH: &str = "./termagotchi.json";
@@ -88,78 +89,61 @@ fn draw_character(icon: &str, position: (u16, u16), dimmed: bool) -> Result<()> 
 }
 
 fn draw_actionbar() -> Result<()> {
-    let snack = "🥨";
-    let meal = "🍔";
-    let ball = "⚽";
-    let scold_finger = "👉";
-    draw_character(meal, (6, 12), false)?;
-    draw_character("1", (6, 13), false)?;
-    draw_character(snack, (11, 12), false)?;
-    draw_character("2", (11, 13), false)?;
-    draw_character(ball, (16, 12), false)?;
-    draw_character("3", (16, 13), false)?;
-    draw_character(scold_finger, (21, 12), false)?;
-    draw_character("4", (21, 13), false)?;
+    draw_character(glyphs::MEAL, glyphs::MEAL_COORD, false)?;
+    draw_character(glyphs::DIGIT_1, glyphs::DIGIT_1_COORD, false)?;
+    draw_character(glyphs::SNACK, glyphs::SNACK_COORD, false)?;
+    draw_character(glyphs::DIGIT_2, glyphs::DIGIT_2_COORD, false)?;
+    draw_character(glyphs::BALL, glyphs::BALL_COORD, false)?;
+    draw_character(glyphs::DIGIT_3, glyphs::DIGIT_3_COORD, false)?;
+    draw_character(glyphs::SCOLD_FINGER, glyphs::SCOLD_COORD, false)?;
+    draw_character(glyphs::DIGIT_4, glyphs::DIGIT_4_COORD, false)?;
     stdout().flush()?;
     Ok(())
 }
 
 fn draw_statusbar(state: &State) -> Result<()> {
-    let toilet = "🚽";
-    let toilet_coord: (u16, u16) = (0, 4);
-    let poop = "💩";
-    let poop_coord: (u16, u16) = (9, 9);
-    let smiley = "🙂";
-    let weary = "😩";
-    let sick = "🤕";
-    let mood_coord: (u16, u16) = (0, 2);
-
     if state.vitals.needs_toilet() {
-        draw_character(toilet, toilet_coord, false)?;
-        draw_character("t", (0, 5), false)?;
+        draw_character(glyphs::TOILET, glyphs::TOILET_COORD, false)?;
+        draw_character(glyphs::LETTER_T, glyphs::LETTER_T_COORD, false)?;
     } else {
-        draw_character(" ", toilet_coord, false)?;
-        draw_character(" ", (0, 5), false)?;
+        draw_character(" ", glyphs::TOILET_COORD, false)?;
+        draw_character(" ", glyphs::LETTER_T_COORD, false)?;
     }
     if state.mess {
-        draw_character(poop, poop_coord, false)?;
-        draw_character("c", (9, 10), false)?;
+        draw_character(glyphs::POOP, glyphs::POOP_COORD, false)?;
+        draw_character(glyphs::LETTER_C, glyphs::LETTER_C_COORD, false)?;
     } else {
-        draw_character(" ", poop_coord, false)?;
-        draw_character(" ", (9, 10), false)?;
+        draw_character(" ", glyphs::POOP_COORD, false)?;
+        draw_character(" ", glyphs::LETTER_C_COORD, false)?;
     }
 
     if state.vitals.is_cranky() {
-        draw_character(weary, mood_coord, false)?;
+        draw_character(glyphs::WEARY, glyphs::MOOD_COORD, false)?;
     } else if state.vitals.is_sick() {
-        draw_character(sick, mood_coord, false)?;
+        draw_character(glyphs::SICK, glyphs::MOOD_COORD, false)?;
     } else {
-        draw_character(smiley, mood_coord, false)?;
+        draw_character(glyphs::SMILEY, glyphs::MOOD_COORD, false)?;
     }
     stdout().flush()?;
     Ok(())
 }
 
 fn draw_pet(state: &State) -> Result<()> {
-    let neutral = "(\\_/)\n( •,•)\n(\")_(\")";
-    let sad = "(\\(\\)\n( ..)\n((‘)(’)";
-    let sick = "(\\(\\)\n(– -)\n((‘)(’)";
-
-    let mut pet_model = neutral;
+    let pet_model;
     if state.vitals.is_sick() {
-        pet_model = sick;
+        pet_model = glyphs::PET_SICK;
     } else if state.vitals.is_cranky() {
-        pet_model = sad;
+        pet_model = glyphs::PET_SAD;
+    } else {
+        pet_model = glyphs::PET_NEUTRAL;
     }
-    let starting_point: (u16, u16) = (10, 7);
 
-    let iter = pet_model.chars().into_iter();
-
-    let mut coord = starting_point;
-    for character in iter {
+    let chars = pet_model.chars();
+    let mut coord = glyphs::PET_COORDS;
+    for character in chars {
         if character == '\n' {
             coord.1 += 1;
-            coord.0 = starting_point.0;
+            coord.0 = glyphs::PET_COORDS.0;
         } else {
             coord.0 += 1;
         }
