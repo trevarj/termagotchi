@@ -130,12 +130,18 @@ fn draw_statusbar(state: &State) -> Result<()> {
 
 fn draw_pet(state: &State) -> Result<()> {
     let pet_model;
-    if state.vitals.is_sick() {
+    if !state.vitals.is_alive() {
+        pet_model = glyphs::PET_DEAD;
+    } else if state.vitals.is_sick() {
         pet_model = glyphs::PET_SICK;
     } else if state.vitals.is_cranky() {
         pet_model = glyphs::PET_SAD;
     } else {
-        pet_model = glyphs::PET_NEUTRAL;
+        if state.time_alive % 6 == 0 {
+            pet_model = glyphs::PET_NEUTRAL_BLINK;
+        } else {
+            pet_model = glyphs::PET_NEUTRAL;
+        }
     }
 
     let chars = pet_model.chars();

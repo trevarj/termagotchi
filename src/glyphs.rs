@@ -40,6 +40,8 @@ pub const DIGIT_4: &str = "4️⃣";
 pub const DIGIT_4_COORD: (u16, u16) = (21, 13);
 
 pub const PET_NEUTRAL: &str = "(\\_/)\n( •,•)\n(\")_(\")";
+pub const PET_NEUTRAL_BLINK: &str = "(\\_/)\n( -,-)\n(\")_(\")";
 pub const PET_SAD: &str = "(\\(\\)\n( ..)\n((‘)(’)";
 pub const PET_SICK: &str = "(\\(\\)\n(– -)\n((‘)(’)";
+pub const PET_DEAD: &str = "(\\(\\)\n(x x)\n((‘)(’)";
 pub const PET_COORDS: (u16, u16) = (10, 7);

@@ -2,13 +2,15 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Result};
 use std::path::Path;
+use std::time::{Duration, SystemTime, SystemTimeError};
 use vitals::Vitals;
-
 #[derive(Serialize, Deserialize)]
 pub struct State {
     pub time_alive: u64,
     pub mess: bool,
     pub vitals: Vitals,
+
+    last_save: Option<SystemTime>,
 }
 
 impl Default for State {
@@ -17,12 +19,14 @@ impl Default for State {
             time_alive: 0,
             mess: false,
             vitals: Vitals::default(),
+            last_save: Option::None,
         }
     }
 }
 
 impl State {
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+    pub fn save<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        self.last_save = Option::from(SystemTime::now());
         println!("Opening state file...");
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
@@ -35,7 +39,8 @@ impl State {
         if let Ok(file) = File::open(path) {
             println!("Reading state from file...");
             let reader = BufReader::new(file);
-            let state: State = serde_json::from_reader(reader)?;
+            let mut state: State = serde_json::from_reader(reader)?;
+            state.pass_time().unwrap_or_default();
             Ok(state)
         } else {
             println!("Falling back to default state...");
@@ -43,27 +48,43 @@ impl State {
         }
     }
 
+    /// Pass time on loading of state
+    pub fn pass_time(&mut self) -> std::result::Result<Duration, SystemTimeError> {
+        let time_diff = self.last_save.unwrap().elapsed()?;
+
+        // time will go 10000x slower when the game isn't running
+        let sleep_duration = time_diff.div_f64(10000.0).as_secs();
+        // doing this the stupid way.
+        for _ in 0..sleep_duration {
+            self.tick();
+        }
+
+        Ok(time_diff)
+    }
+
     /// Function to simulate time passing in game
     pub fn tick(&mut self) {
-        self.time_alive += 1;
-        self.vitals.modify_hunger(2);
-        self.vitals.modify_comfort(-1);
-        self.vitals.modify_happiness(-1);
+        if self.vitals.is_alive() {
+            self.time_alive += 1;
+            self.vitals.modify_hunger(2);
+            self.vitals.modify_comfort(-1);
+            self.vitals.modify_happiness(-1);
 
-        // health regen or degen
-        if self.vitals.hp.get() < 100 && !self.vitals.is_sick() {
-            self.vitals.modify_hp(1);
-        } else if self.vitals.is_sick() {
-            self.vitals.modify_hp(-1);
+            // health regen or degen
+            if self.vitals.hp.get() < 100 && !self.vitals.is_sick() {
+                self.vitals.modify_hp(1);
+            } else if self.vitals.is_sick() {
+                self.vitals.modify_hp(-1);
+            }
+
+            // poo incoming!
+            if self.vitals.comfort.is_zero() {
+                self.mess = true;
+                self.vitals.modify_comfort(i8::max_value());
+            }
+
+            // eprintln!("{:?}", self.vitals);
         }
-
-        // poo incoming!
-        if self.vitals.comfort.is_zero() {
-            self.mess = true;
-            self.vitals.modify_comfort(i8::max_value());
-        }
-
-        // eprintln!("{:?}", self.vitals);
     }
 }
 
@@ -73,7 +94,6 @@ mod vitals {
     /// Holds the current vitals of the pet
     #[derive(Serialize, Deserialize, Copy, Clone, Debug)]
     pub struct Vitals {
-        pub alive: bool,
         pub hp: Stat,
         pub hunger: Stat,
         pub happiness: Stat,
@@ -107,7 +127,6 @@ mod vitals {
     impl Default for Vitals {
         fn default() -> Vitals {
             Vitals {
-                alive: true,
                 hp: Stat(100),
                 hunger: Stat(50),
                 happiness: Stat(100),
@@ -167,5 +186,9 @@ mod tests {
         let mut stat = vitals::Stat(3);
         stat.modify(-4);
         assert_eq!(stat.get(), 0);
+
+        stat = vitals::Stat(4);
+        stat.modify(1);
+        assert_eq!(stat.get(), 5);
     }
 }

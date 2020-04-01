@@ -11,12 +11,14 @@ pub enum Action {
 }
 
 pub fn perform_action(action: &Action, state: &mut State) {
-    match &action {
-        Action::Meal | Action::Snack => feed(&action, state),
-        Action::Play => play(state),
-        Action::Clean => clean(state),
-        Action::Toilet => toilet(state),
-        Action::Scold => scold(state),
+    if state.vitals.is_alive() {
+        match &action {
+            Action::Meal | Action::Snack => feed(&action, state),
+            Action::Play => play(state),
+            Action::Clean => clean(state),
+            Action::Toilet => toilet(state),
+            Action::Scold => scold(state),
+        }
     }
 }
 
