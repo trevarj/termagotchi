@@ -52,10 +52,10 @@ impl State {
     pub fn pass_time(&mut self) -> std::result::Result<Duration, SystemTimeError> {
         let time_diff = self.last_save.unwrap().elapsed()?;
 
-        // time will go 10000x slower when the game isn't running
-        let sleep_duration = time_diff.div_f64(10000.0).as_secs();
+        // one hour will be one second of game time
+        let calculate_time_passed = time_diff.as_secs()/3600;
         // doing this the stupid way.
-        for _ in 0..sleep_duration {
+        for _ in 0..calculate_time_passed {
             self.tick();
         }
 
@@ -190,5 +190,16 @@ mod tests {
         stat = vitals::Stat(4);
         stat.modify(1);
         assert_eq!(stat.get(), 5);
+    }
+
+    #[test]
+    fn test_pass_time() {
+        let mut state = State::default();
+        //subtract a day
+        state.last_save = Some(SystemTime::now().checked_sub(Duration::from_secs(3600)).unwrap());
+        
+        state.pass_time().unwrap();
+
+        assert_eq!(state.time_alive, 1 );
     }
 }
