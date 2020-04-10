@@ -7,10 +7,29 @@ use std::time::Duration;
 use termagotchi::actions::{perform_action, Action};
 use termagotchi::glyphs;
 use termagotchi::state::State;
+use argh::FromArgs;
 
 const PATH: &str = "./termagotchi.json";
 
+///
+/// Command line arguments
+/// 
+#[derive(FromArgs)]
+struct Args {
+    #[argh(description="start a new game.", switch, short = 'n')]
+    new_game: bool,
+}
+
 fn main() -> Result<()> {
+
+    // parse args
+    let args: Args = argh::from_env();
+    
+    // start a new game if user specified
+    if args.new_game {
+        State::default().save(PATH)?;
+    }
+    
     // load game state
     let state = &mut State::load(PATH).unwrap();
 
