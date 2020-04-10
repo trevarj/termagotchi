@@ -32,6 +32,7 @@ impl State {
         let writer = BufWriter::new(file);
         println!("Writing state...");
         serde_json::to_writer_pretty(writer, self)?;
+        Ok(())
     }
 
     pub fn load<P: AsRef<Path>>(path: P) -> Result<State> {
@@ -52,7 +53,7 @@ impl State {
         let time_diff = self.last_save.unwrap().elapsed()?;
 
         // one hour will be one second of game time
-        let calculate_time_passed = time_diff.as_secs() / 3600;
+        let calculate_time_passed = time_diff.as_secs()/3600;
         // doing this the stupid way.
         for _ in 0..calculate_time_passed {
             self.tick();
@@ -195,14 +196,10 @@ mod tests {
     fn test_pass_time() {
         let mut state = State::default();
         //subtract a day
-        state.last_save = Some(
-            SystemTime::now()
-                .checked_sub(Duration::from_secs(3600))
-                .unwrap(),
-        );
-
+        state.last_save = Some(SystemTime::now().checked_sub(Duration::from_secs(3600)).unwrap());
+        
         state.pass_time().unwrap();
 
-        assert_eq!(state.time_alive, 1);
+        assert_eq!(state.time_alive, 1 );
     }
 }
