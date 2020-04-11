@@ -4,7 +4,7 @@ use std::io::{BufReader, BufWriter, Result};
 use std::path::Path;
 use std::time::{Duration, SystemTime, SystemTimeError};
 use vitals::Vitals;
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct State {
     pub time_alive: u64,
     pub mess: bool,
@@ -48,12 +48,12 @@ impl State {
         }
     }
 
-    /// Pass time on loading of state
+    /// Caclulate the passing of time on loading of state
     pub fn pass_time(&mut self) -> std::result::Result<Duration, SystemTimeError> {
         let time_diff = self.last_save.unwrap().elapsed()?;
 
         // one hour will be one second of game time
-        let calculate_time_passed = time_diff.as_secs()/3600;
+        let calculate_time_passed = time_diff.as_secs() / 3600;
         // doing this the stupid way.
         for _ in 0..calculate_time_passed {
             self.tick();
@@ -91,6 +91,10 @@ impl State {
 mod vitals {
     use serde::{Deserialize, Serialize};
 
+    const HUNGER_THRESHOLD: u8 = 100;
+    const CRANKY_THRESHOLD: u8 = 50;
+    const TOILET_THRESHOLD: u8 = 50;
+    const SICK_HUNGER_THRESHOLD: u8 = 150;
     /// Holds the current vitals of the pet
     #[derive(Serialize, Deserialize, Copy, Clone, Debug)]
     pub struct Vitals {
@@ -136,42 +140,53 @@ mod vitals {
     }
 
     impl Vitals {
+        /// Change the hunger of the pet
+        ///
+        /// Pet can only eat when it is not cranky
         pub fn modify_hunger(&mut self, level: i8) {
             if !self.is_cranky() {
                 self.hunger.modify(level);
             }
         }
 
+        /// Change the happiness of the pet
         pub fn modify_happiness(&mut self, level: i8) {
             self.happiness.modify(level);
         }
 
+        /// Change the comfort of the pet
+        /// The comfort determines if the pet needs to
+        /// go to the bathroom
         pub fn modify_comfort(&mut self, level: i8) {
             self.comfort.modify(level);
         }
-
+        /// Change the health points of the pet
         pub fn modify_hp(&mut self, level: i8) {
             self.hp.modify(level);
         }
-
+        /// Pet becomes sick if it is too hungry or unhappy
         pub fn is_sick(self) -> bool {
-            self.hunger.get() >= 150 || self.happiness.is_zero()
+            self.hunger.get() >= SICK_HUNGER_THRESHOLD || self.happiness.is_zero()
         }
 
+        /// Returns if the pet is alive
         pub fn is_alive(self) -> bool {
             !self.hp.is_zero()
         }
 
+        /// Returns if the pet has a cranky mood
         pub fn is_cranky(self) -> bool {
-            self.happiness.get() <= 50
+            self.happiness.get() <= CRANKY_THRESHOLD
         }
 
+        /// Returns if the pet is hungry
         pub fn needs_food(self) -> bool {
-            self.hunger.get() >= 100
+            self.hunger.get() >= HUNGER_THRESHOLD
         }
 
+        /// Returns if the pet needs to go to the bathroom
         pub fn needs_toilet(self) -> bool {
-            self.comfort.get() <= 50
+            self.comfort.get() <= TOILET_THRESHOLD
         }
     }
 }
@@ -180,7 +195,7 @@ mod vitals {
 mod tests {
     use super::*;
 
-    // Hmm...
+    /// Tests the overflow handling of modify() on Stat
     #[test]
     fn test_stat_modify() {
         let mut stat = vitals::Stat(3);
@@ -192,14 +207,20 @@ mod tests {
         assert_eq!(stat.get(), 5);
     }
 
+    /// Tests the passing of time calculation when
+    /// the player loads up a game after not playing for a while
     #[test]
     fn test_pass_time() {
         let mut state = State::default();
         //subtract a day
-        state.last_save = Some(SystemTime::now().checked_sub(Duration::from_secs(3600)).unwrap());
-        
+        state.last_save = Some(
+            SystemTime::now()
+                .checked_sub(Duration::from_secs(3600))
+                .unwrap(),
+        );
+
         state.pass_time().unwrap();
 
-        assert_eq!(state.time_alive, 1 );
+        assert_eq!(state.time_alive, 1);
     }
 }

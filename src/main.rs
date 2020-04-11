@@ -4,6 +4,7 @@ use crossterm::style::{
 use crossterm::{cursor, event, execute, queue, terminal, Result};
 use std::io::{stdout, Write};
 use std::time::Duration;
+use std::process::exit;
 use termagotchi::actions::{perform_action, Action};
 use termagotchi::glyphs;
 use termagotchi::state::State;
@@ -18,6 +19,8 @@ const PATH: &str = "./termagotchi.json";
 struct Args {
     #[argh(description="start a new game.", switch, short = 'n')]
     new_game: bool,
+    #[argh(description="dump pet stats to console.", switch, short = 's')]
+    stat_dump: bool,
 }
 
 fn main() -> Result<()> {
@@ -32,6 +35,12 @@ fn main() -> Result<()> {
     
     // load game state
     let state = &mut State::load(PATH).unwrap();
+
+    // dump pet's stats to console and exit successfully
+    if args.stat_dump {
+        println!("{:?}", state.vitals);
+        exit(0);
+    }
 
     // set up terminal window
     let (cols, rows) = terminal::size()?;

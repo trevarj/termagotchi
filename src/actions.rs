@@ -22,6 +22,7 @@ pub fn perform_action(action: &Action, state: &mut State) {
     }
 }
 
+
 fn feed(food_type: &Action, state: &mut State) {
     if let Action::Meal = food_type {
         state.vitals.modify_hunger(-40);
