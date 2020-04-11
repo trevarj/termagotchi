@@ -16,6 +16,14 @@ Basically just `cargo run` and it will resize your terminal.
 
 `Q` to quit. Other keys are on screen.
 
+```
+Command line arguments
+
+Options:
+  -n, --new-game    start a new game.
+  --help            display usage information
+```
+
 ## TODO
 - Add actual pet art (ASCII probably) and animate it?
 - Write tests (heh...)
