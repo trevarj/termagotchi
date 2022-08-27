@@ -1,45 +1,50 @@
+use argh::FromArgs;
 use crossterm::style::{
     Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
 };
 use crossterm::{cursor, event, execute, queue, terminal, Result};
+use directories::ProjectDirs;
+use std::fmt::Display;
 use std::io::{stdout, Write};
 use std::time::Duration;
-use std::process::exit;
 use termagotchi::actions::{perform_action, Action};
-use termagotchi::glyphs;
+use termagotchi::glyphs::*;
 use termagotchi::state::State;
-use argh::FromArgs;
 
-const PATH: &str = "./termagotchi.json";
+const CONFIG_FILE: &str = "termagotchi.json";
 
 ///
 /// Command line arguments
-/// 
+///
 #[derive(FromArgs)]
 struct Args {
-    #[argh(description="start a new game.", switch, short = 'n')]
+    #[argh(description = "start a new game.", switch, short = 'n')]
     new_game: bool,
-    #[argh(description="dump pet stats to console.", switch, short = 's')]
+    #[argh(description = "dump pet stats to console.", switch, short = 's')]
     stat_dump: bool,
 }
 
 fn main() -> Result<()> {
-
     // parse args
     let args: Args = argh::from_env();
-    
+
+    let state_path = ProjectDirs::from("com", "termagotchi", "termagotchi")
+        .expect("no home directory found")
+        .cache_dir()
+        .join(CONFIG_FILE);
+
     // start a new game if user specified
     if args.new_game {
-        State::default().save(PATH)?;
+        State::default().save(&state_path)?;
     }
-    
+
     // load game state
-    let state = &mut State::load(PATH).unwrap();
+    let state = &mut State::load(&state_path).unwrap();
 
     // dump pet's stats to console and exit successfully
     if args.stat_dump {
         println!("{:?}", state.vitals);
-        exit(0);
+        return Ok(());
     }
 
     // set up terminal window
@@ -67,8 +72,8 @@ fn main() -> Result<()> {
 
         // listen for an input event
         if event::poll(Duration::from_secs(1))? {
-            match event::read()? {
-                event::Event::Key(key_press) => match key_press.code {
+            if let event::Event::Key(key_press) = event::read()? {
+                match key_press.code {
                     event::KeyCode::Char('q') => break,
                     event::KeyCode::Char('1') => perform_action(&Action::Meal, state),
                     event::KeyCode::Char('2') => perform_action(&Action::Snack, state),
@@ -77,10 +82,8 @@ fn main() -> Result<()> {
                     event::KeyCode::Char('t') => perform_action(&Action::Toilet, state),
                     event::KeyCode::Char('c') => perform_action(&Action::Clean, state),
                     _ => {}
-                },
-                _ => {}
+                }
             }
-        } else {
         }
 
         // progress the game state...
@@ -88,100 +91,109 @@ fn main() -> Result<()> {
     }
 
     // save the game state to disk
-    let _ = state.save(PATH);
+    state.save(&state_path)?;
 
     terminal::disable_raw_mode()?;
     Ok(execute!(
         stdout(),
+        cursor::Show,
         terminal::LeaveAlternateScreen,
         terminal::SetSize(cols, rows),
         ResetColor,
     )?)
 }
 
-fn draw_character(icon: &str, position: (u16, u16), dimmed: bool) -> Result<()> {
-    let attribute = if dimmed {
-        Attribute::Dim
-    } else {
-        Attribute::Reset
-    };
+fn draw_character<T: Display>(glyph: T, pos: (u16, u16)) -> Result<()> {
     queue!(
         stdout(),
-        cursor::MoveTo(position.0, position.1),
-        SetAttribute(attribute),
+        cursor::MoveTo(pos.0, pos.1),
+        SetAttribute(Attribute::Reset),
         SetBackgroundColor(Color::Grey),
         SetForegroundColor(Color::Black),
-        Print(icon),
+        Print(glyph),
     )?;
     Ok(())
 }
 
+fn draw_glyph(glyph: Glyph) -> Result<()> {
+    draw_character(glyph.icon(), glyph.pos())
+}
+
+fn draw_glyph_pair(pair: (Glyph, Glyph)) -> Result<()> {
+    draw_glyph(pair.0)?;
+    draw_glyph(pair.1)
+}
+
+const ACTION_BAR: [Glyph; 8] = [
+    MEAL,
+    DIGIT_1,
+    SNACK,
+    DIGIT_2,
+    BALL,
+    DIGIT_3,
+    SCOLD_FINGER,
+    DIGIT_4,
+];
+
 fn draw_actionbar() -> Result<()> {
-    draw_character(glyphs::MEAL, glyphs::MEAL_COORD, false)?;
-    draw_character(glyphs::DIGIT_1, glyphs::DIGIT_1_COORD, false)?;
-    draw_character(glyphs::SNACK, glyphs::SNACK_COORD, false)?;
-    draw_character(glyphs::DIGIT_2, glyphs::DIGIT_2_COORD, false)?;
-    draw_character(glyphs::BALL, glyphs::BALL_COORD, false)?;
-    draw_character(glyphs::DIGIT_3, glyphs::DIGIT_3_COORD, false)?;
-    draw_character(glyphs::SCOLD_FINGER, glyphs::SCOLD_COORD, false)?;
-    draw_character(glyphs::DIGIT_4, glyphs::DIGIT_4_COORD, false)?;
+    for glyph in ACTION_BAR {
+        draw_glyph(glyph)?;
+    }
     stdout().flush()?;
     Ok(())
 }
 
 fn draw_statusbar(state: &State) -> Result<()> {
-    if state.vitals.needs_toilet() {
-        draw_character(glyphs::TOILET, glyphs::TOILET_COORD, false)?;
-        draw_character(glyphs::LETTER_T, glyphs::LETTER_T_COORD, false)?;
+    // Toilet indicator
+    let pair = if state.vitals.needs_toilet() {
+        (TOILET, LETTER_T)
     } else {
-        draw_character(" ", glyphs::TOILET_COORD, false)?;
-        draw_character(" ", glyphs::LETTER_T_COORD, false)?;
-    }
-    if state.mess {
-        draw_character(glyphs::POOP, glyphs::POOP_COORD, false)?;
-        draw_character(glyphs::LETTER_C, glyphs::LETTER_C_COORD, false)?;
+        (TOILET.blanked(), LETTER_T.blanked())
+    };
+    draw_glyph_pair(pair)?;
+
+    // Poop indicator
+    let pair = if state.mess {
+        (POOP, LETTER_C)
     } else {
-        draw_character(" ", glyphs::POOP_COORD, false)?;
-        draw_character(" ", glyphs::LETTER_C_COORD, false)?;
-    }
+        (POOP.blanked(), LETTER_C.blanked())
+    };
+    draw_glyph_pair(pair)?;
 
     if state.vitals.is_cranky() {
-        draw_character(glyphs::WEARY, glyphs::MOOD_COORD, false)?;
+        draw_glyph(WEARY)?;
     } else if state.vitals.is_sick() {
-        draw_character(glyphs::SICK, glyphs::MOOD_COORD, false)?;
+        draw_glyph(SICK)?;
     } else {
-        draw_character(glyphs::SMILEY, glyphs::MOOD_COORD, false)?;
+        draw_glyph(SMILEY)?;
     }
     stdout().flush()?;
     Ok(())
 }
 
 fn draw_pet(state: &State) -> Result<()> {
-    let pet_model;
-    if !state.vitals.is_alive() {
-        pet_model = glyphs::PET_DEAD;
+    let pet = if !state.vitals.is_alive() {
+        Pet::dead()
     } else if state.vitals.is_sick() {
-        pet_model = glyphs::PET_SICK;
+        Pet::sick()
     } else if state.vitals.is_cranky() {
-        pet_model = glyphs::PET_SAD;
+        Pet::sad()
+    } else if state.time_alive % 6 == 0 {
+        Pet::neutral_blink()
     } else {
-        if state.time_alive % 6 == 0 {
-            pet_model = glyphs::PET_NEUTRAL_BLINK;
-        } else {
-            pet_model = glyphs::PET_NEUTRAL;
-        }
-    }
+        Pet::neutral()
+    };
 
-    let chars = pet_model.chars();
-    let mut coord = glyphs::PET_COORDS;
+    let chars = pet.chars();
+    let mut coord = Pet::pos();
     for character in chars {
         if character == '\n' {
             coord.1 += 1;
-            coord.0 = glyphs::PET_COORDS.0;
+            coord.0 = Pet::pos().0; // shift back
         } else {
             coord.0 += 1;
         }
-        draw_character(&character.to_string(), coord, false)?;
+        draw_character(character, coord)?;
     }
 
     stdout().flush()?;
